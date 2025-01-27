@@ -15,6 +15,7 @@ const markovTransitions = new MarkovTransitions(
         [["level-0", "level-0"], 0.5], [["level-0", "level-1"], 0.4], [["level-0", "level-2"], 0.1],
         [["level-1", "level-1"], 0.6], [["level-1", "level-2"], 0.3], [["level-1", "level-3"], 0.1],
         [["level-2", "level-2"], 0.7], [["level-2", "level-3"], 0.3],
+        [["level-3", "level-3"], 1.0],
     ]
 )
 
@@ -28,6 +29,6 @@ console.log(result);
   '"level-0"': 0.0625,
   '"level-1"': 0.26839999999999997,
   '"level-2"': 0.34919999999999995,
-  '"level-3"': 0.1339
+  '"level-3"': 0.3199
 }
 ```
