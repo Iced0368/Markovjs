@@ -1,6 +1,7 @@
 # Brief explanation
 
 markovjs is a library for representing the state of a Markov transition as a number, string, or complex object.
+MarkovTransitions의 인자로 [[from, to], probability] 형태의 배열을 전달하면 된다.
 
 There is a dependence on mathjs.
 
@@ -8,6 +9,7 @@ There is a dependence on mathjs.
 ```typescript
 const init = {"initState" : 1};
 
+// [[from, to], probability]
 const markovTransitions = new MarkovTransitions(
     [
         [["initState", "level-0"], 1.0],
