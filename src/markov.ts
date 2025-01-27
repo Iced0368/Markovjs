@@ -99,13 +99,10 @@ export class MarkovTransitions {
     encode(record: Record<MarkovState, number> | Map<MarkovComplexState, number>) {
         const vector = Array(this.states.length).fill(0);
 
-        if (vector instanceof Map) {
-            for (let [key, value] of vector)
-                vector[this.stateIndex.get(JSON.stringify(key))!] = value;
-        }
-        else {
-            for (let [key, value] of Object.entries(record))
-                vector[this.stateIndex.get(JSON.stringify(key))!] = value;
+        for (let [key, value] of (record instanceof Map ? record : Object.entries(record))) {
+            const index = this.stateIndex.get(JSON.stringify(key));
+            if (index !== undefined)
+                vector[index] = value;
         }
 
         return vector;
