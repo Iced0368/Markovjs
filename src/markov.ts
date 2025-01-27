@@ -22,6 +22,8 @@ export class MarkovTransitions {
     stateIndex: Map<string, number>
     transitions: Map<[string, string], number>
 
+    get size() { return this.transitions.size; }
+
     /**
      * 
      * @param table array of [[from, to], prob]
@@ -55,6 +57,23 @@ export class MarkovTransitions {
             }
 
         this.transitions.set([sFrom, sTo], prob);
+    }
+
+    /**
+     * Clean up unused states and transitions.
+     */
+    cleanup() {
+        this.states = [];
+        this.stateIndex = new Map();
+
+        const prevTransitions = this.transitions;
+        this.transitions = new Map();
+
+        for (let [from_to, prob] of prevTransitions)
+            if (prob !== 0) {
+                const [from, to] = from_to;
+                this.setTransition(from, to, prob);
+            }
     }
 
     /**
