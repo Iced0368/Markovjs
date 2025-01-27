@@ -1,10 +1,11 @@
 import * as mathjs from "mathjs"
 
+export type MarkovMatrix = mathjs.Matrix;
 export type MarkovState = string | number;
 export type MarkovComplexState = MarkovState | Object;
 export type MarkovTable = [[MarkovComplexState, MarkovComplexState], number][];
 
-function matPow(mat: mathjs.Matrix, n: number, format?: "dense" | "sparse") {
+function matPow(mat: MarkovMatrix, n: number, format?: "dense" | "sparse") {
     let result = mathjs.identity(mat.size(), format ?? "dense");
 
     while (n) {
@@ -21,6 +22,10 @@ export class MarkovTransitions {
     stateIndex: Map<string, number>
     transitions: Map<[string, string], number>
 
+    /**
+     * 
+     * @param table array of [[from, to], prob]
+     */
     constructor(table?: MarkovTable) {
         this.states = [];
         this.stateIndex = new Map();
@@ -33,6 +38,12 @@ export class MarkovTransitions {
         });
     }
 
+    /**
+     * Add new transition.
+     * @param from source state
+     * @param to  destination state
+     * @param prob  transition probability
+     */
     setTransition<T extends MarkovComplexState>(from: T, to: T, prob: number) {
         let sFrom = JSON.stringify(from);
         let sTo = JSON.stringify(to);
@@ -46,6 +57,11 @@ export class MarkovTransitions {
         this.transitions.set([sFrom, sTo], prob);
     }
 
+    /**
+     * Get matrix form of transitions.
+     * @param format 
+     * @returns 
+     */
     getMatrix(format?: "dense" | "sparse") {
         const n = this.states.length;
         const mat = Array.from({ length: n }, () => Array(n).fill(0));
@@ -56,35 +72,50 @@ export class MarkovTransitions {
         return mathjs.matrix(mat, format ?? "dense", "number");
     }
 
-    transfer(init: Record<MarkovState, number> | Map<MarkovComplexState, number>, n: number, format?: "dense" | "sparse") {
-        const initVector = Array(this.states.length).fill(0);
+    /**
+     * Vectorize state record.
+     * @param record
+     * @returns 
+     */
+    encode(record: Record<MarkovState, number> | Map<MarkovComplexState, number>) {
+        const vector = Array(this.states.length).fill(0);
 
-        if (init instanceof Map) {
-            for (let [key, value] of init)
-                initVector[this.stateIndex.get(JSON.stringify(key))!] = value;
+        if (vector instanceof Map) {
+            for (let [key, value] of vector)
+                vector[this.stateIndex.get(JSON.stringify(key))!] = value;
         }
         else {
-            for (let [key, value] of Object.entries(init))
-                initVector[this.stateIndex.get(JSON.stringify(key))!] = value;
+            for (let [key, value] of Object.entries(record))
+                vector[this.stateIndex.get(JSON.stringify(key))!] = value;
         }
 
-        const transfered = mathjs.multiply(mathjs.matrix(initVector), matPow(this.getMatrix(format ?? "dense"), n));
+        return vector;
+    }
+
+    /**
+     * Interpret column vector and convert it to record.
+     * @param columnVector 
+     * @returns 
+     */
+    decode(columnVector: MarkovMatrix) {
+        const result: Record<string, number> = {};
+        for (let i = 0; i < this.states.length; i++)
+            if (columnVector.get([i]))
+                result[this.states[i] as MarkovState] = columnVector.get([i]);
         
-        if (init instanceof Map) {
-            const result = new Map();
-            for (let i = 0; i < this.states.length; i++)
-                if (transfered.get([i]))
-                    result.set(this.states[i], transfered.get([i]));
-            
-            return result;
-        }
-        else {
-            const result = {};
-            for (let i = 0; i < this.states.length; i++)
-                if (transfered.get([i]))
-                    result[this.states[i] as MarkovState] = transfered.get([i]);
-            
-            return result;
-        }
+        return result;
+    }
+
+    /**
+     * Returns the result after n transitions occurred in the initial state.
+     * @param init initial state
+     * @param n transition count
+     * @param format 
+     * @returns 
+     */
+    transfer(init: Record<MarkovState, number> | Map<MarkovComplexState, number>, n: number, format?: "dense" | "sparse") {
+        const initVector = this.encode(init);
+        const transferred = mathjs.multiply(mathjs.matrix(initVector), matPow(this.getMatrix(format ?? "dense"), n));
+        return this.decode(transferred);
     }
 }
